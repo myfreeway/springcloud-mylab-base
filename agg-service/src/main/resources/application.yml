@@ -1,0 +1,54 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  ssl:
+    enabled: false
+  # 开启优雅停机
+  shutdown: graceful
+
+spring:
+  application:
+    name: agg-service
+
+  lifecycle:
+    # 优雅停机的最大等待时间（K8S发出信号后最长30秒也会杀掉应用）
+    timeout-per-shutdown-phase: 28s
+  cloud:
+    loadbalancer:
+      retry:
+        # 开启重试，默认开启
+        enabled: true
+
+#注册中心
+eureka:
+#  instance:
+#    prefer-ip-address: true
+#    lease-expiration-duration-in-seconds: 20 #服务过期时间配置,超过这个时间没有接收到心跳EurekaServer就会将这个实例剔除(默认90秒)
+#    lease-renewal-interval-in-seconds: 5 #服务刷新时间配置，每隔这个时间会主动心跳一次(默认30秒)
+#    instance-id:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+#    registry-fetch-interval-seconds: 10 #重新刷新服务地址的时间
+#  fetch-registry: true
+
+hystrix:
+  command:
+    # 默认断路器
+    default:
+      execution:
+        isolation:
+          # 信号量隔离
+          strategy: SEMAPHORE
+          thread:
+            # 断路器默认超时时间，必须要大于ribbon的超时时间，不然ribbon没有机会触发超时和重试，就熔断了
+            timeoutInMilliseconds: 180000
+
+#api接口文档
+springdoc:
+  # 分组配置
+  group-configs:
+    - group: All
+      packagesToScan: com.example.demo.agg
+      pathsToMatch: /**
