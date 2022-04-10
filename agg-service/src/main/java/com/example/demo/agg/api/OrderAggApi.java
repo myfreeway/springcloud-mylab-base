@@ -63,7 +63,7 @@ public class OrderAggApi {
 	@Autowired
 	private DiscoveryClient discoveryClient; //服务发现客户端
 	
-	@GetMapping(value = "/add")
+	@GetMapping(value = "/test")
 	public Integer test() {
 		log.info("discoveryClient.getServices()={}", discoveryClient.getServices());
 		log.info("discoveryClient.getInstances()={}", discoveryClient.getInstances("infra-user-service"));

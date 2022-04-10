@@ -1,12 +1,9 @@
 server:
-  port: 8080
-  servlet:
-    context-path: /
-  ssl:
-    enabled: false
-  # 开启优雅停机
-  shutdown: graceful
-
+  tomcat:
+    #socket调用read()等待读取的时间，默认是60s
+    connectionTimeout: 1s
+    maxConnections: 1
+    acceptCount: 1
 spring:
   application:
     name: agg-service
@@ -17,8 +14,11 @@ spring:
   cloud:
     loadbalancer:
       retry:
-        # 开启重试，默认开启
-        enabled: true
+        # 开启重试，默认开启。默认对get重试，并且是找另一个实例重试
+        enabled: false
+        retryOnAllOperations: true
+        maxRetriesOnSameServiceInstance: 1
+        maxRetriesOnNextServiceInstance: 1
 
 #注册中心
 eureka:
@@ -44,6 +44,26 @@ hystrix:
           thread:
             # 断路器默认超时时间，必须要大于ribbon的超时时间，不然ribbon没有机会触发超时和重试，就熔断了
             timeoutInMilliseconds: 180000
+#超时策略
+#通常连接时间受队列排队和服务未启动的影响，通常该影响很小，建议用300ms。这两个参数的默认值分别为 10秒 和 60秒
+#连接超时 (connectTimeout) 和 读取超时 (readTimeout) 同时配置时，才会生效。
+#【超时总结】feign的超时比loadbalance的更好，更能指定到feignclient自定义设置，还能针对回参报文做自定义重试策略，更加直接。
+#2.2.x之后的springboot里的feign已经将ribbon去掉，所以只需对feign设置超时策略即可
+feign:
+  client:
+    config:
+      #全局300ms连接超时，2s读超时，无重试
+      default:
+        connect-timeout: 300
+        readTimeout: 2000
+      #风控服务300ms连接超时，3s读超时。假定该服务是稍慢的，所以单独配置更长的超时时间。
+      #重试策略:最大重试次数2次，包含首次调用。重试间隔在[100ms, 1000ms]之间随机。
+      #单次feign请求按300,3000超时策略，超时则按retryer策略重试。3s超时并非总重试时间。
+      infra-risk-service:
+        connect-timeout: 300
+        readTimeout: 3000
+        retryer: com.example.demo.agg.core.MyRetryer
+
 
 #api接口文档
 springdoc:
